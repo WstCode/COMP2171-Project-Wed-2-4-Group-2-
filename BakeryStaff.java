@@ -1,23 +1,26 @@
+import java.time.LocalDate;
+import java.util.List;
+
 public class BakeryStaff {
-    //attributes
+
+    // attributes
     private String staffID;
     private String username;
     private String password;
     private boolean loggedIn;
 
-
-    //constructor
-    public BakeryStaff(String staffID, String username, String password){
+    // constructor
+    public BakeryStaff(String staffID, String username, String password) {
         this.staffID = staffID;
         this.username = username;
         this.password = password;
         this.loggedIn = false;
     }
 
-    // Methods
+    // login
     public boolean login(String enteredUsername, String enteredPassword) {
         if (this.username.equals(enteredUsername) && this.password.equals(enteredPassword)) {
-            this.loggedIn = true;
+            loggedIn = true;
             System.out.println("Login successful. Welcome, " + username + "!");
             return true;
         } else {
@@ -26,6 +29,7 @@ public class BakeryStaff {
         }
     }
 
+    // logout
     public void logout() {
         if (loggedIn) {
             loggedIn = false;
@@ -35,21 +39,35 @@ public class BakeryStaff {
         }
     }
 
-    public Order createOrder(OrderManager manager, Customer customer, String details) {
+    // create order
+    public Order createOrder(OrderManager manager, Customer customer,
+                             List<OrderItem> details, LocalDate deliveryDate) {
+
         if (!loggedIn) {
             System.out.println("Access denied. Please log in first.");
             return null;
         }
-        return manager.createOrder(customer, details);
+
+        return manager.createOrder(customer, details, deliveryDate);
     }
 
-    public Customer createCustomer(OrderManager manager, String name,
-                                   String contact, String address) {
+    // create customer
+    public Customer createCustomer(String customerID, String name,
+                                   String email, String phoneNumber, String address) {
+
         if (!loggedIn) {
             System.out.println("Access denied. Please log in first.");
             return null;
         }
-        return manager.createCustomer(name, contact, address);
+
+        Customer customer = new Customer(customerID, name, email, phoneNumber, address);
+
+        if (!customer.validateContactDetails()) {
+            System.out.println("Invalid customer details.");
+            return null;
+        }
+
+        return customer;
     }
 
     public String getStaffID() {
@@ -75,10 +93,9 @@ public class BakeryStaff {
     @Override
     public String toString() {
         return "BakeryStaff{" +
-                "staffID='"  + staffID  + '\'' +
+                "staffID='" + staffID + '\'' +
                 ", username='" + username + '\'' +
                 ", loggedIn=" + loggedIn +
                 '}';
     }
-
 }
