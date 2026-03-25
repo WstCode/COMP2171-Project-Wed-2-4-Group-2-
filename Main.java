@@ -28,7 +28,7 @@ public class Main {
         CustomerRepository customerRepository = new CustomerRepository();
         CustomerManager customerManager = new CustomerManager(customerRepository);
         OrderRepository orderRepository = new OrderRepository("orders.txt");
-        OrderManager orderManager = new OrderManager();
+        OrderManager orderManager = new OrderManager(orderRepository);
 
         //ManageOrdersUI init
         ManageOrdersUI ordersUI = new ManageOrdersUI(manager);
