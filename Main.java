@@ -27,8 +27,13 @@ public class Main {
 
         CustomerRepository customerRepository = new CustomerRepository();
         CustomerManager customerManager = new CustomerManager(customerRepository);
-        OrderManager orderManager = new OrderManager();
         OrderRepository orderRepository = new OrderRepository("orders.txt");
+        OrderManager orderManager = new OrderManager();
+
+        //ManageOrdersUI init
+        ManageOrdersUI ordersUI = new ManageOrdersUI(manager);
+
+        ordersUI.start();
 
         System.out.println("Create Order selected.");
 
