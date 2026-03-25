@@ -61,6 +61,6 @@ public class Customer {
             System.out.println("Invalid contact details. Cannot place order.");
             return null;
         }
-        return manager.createOrder(this, items, deliveryDate);
+        return manager.createOrder(this.customerID, this.name, items, deliveryDate);
     }
 }

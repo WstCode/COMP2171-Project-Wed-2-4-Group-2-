@@ -1,4 +1,3 @@
-
 public class CustomerManager {
     private CustomerRepository customerRepository;
 
@@ -6,15 +5,23 @@ public class CustomerManager {
         this.customerRepository = customerRepository;
     }
 
-    public Customer createCustomer(String customerID, String name, String email,
-                                   String phoneNumber, String address) {
-        Customer customer = new Customer(customerID, name, email, phoneNumber, address);
-
-        if (!customer.validateContactDetails()) {
+    public Customer createCustomer(String customerID, String name, String email, String phoneNumber, String address) {
+        if (customerID == null || customerID.isBlank()
+                || name == null || name.isBlank()
+                || email == null || email.isBlank()
+                || phoneNumber == null || phoneNumber.isBlank()
+                || address == null || address.isBlank()) {
             return null;
         }
 
         if (customerRepository.customerExists(customerID)) {
+            System.out.println("Customer ID already exists.");
+            return null;
+        }
+
+        Customer customer = new Customer(customerID, name, email, phoneNumber, address);
+
+        if (!customer.validateContactDetails()) {
             return null;
         }
 

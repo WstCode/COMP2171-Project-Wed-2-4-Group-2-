@@ -58,19 +58,19 @@ public class Order {
      * Formats order data for the OrderRepository
      */
     public String getOrderDetails() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("Order ID: %s%n", orderID));
-        sb.append(String.format("Customer: %s (%s)%n", customerName, customerID));
-        sb.append(String.format("Date: %s | Delivery: %s%n", orderDate, deliveryDate));
-        sb.append(String.format("Status: %s%n", status));
-        sb.append("Items Ordered:%n");
-        for (OrderItem item : items) {
-            sb.append(String.format(" - %s (x%d): $%.2f%n", 
-                      item.getItemName(), item.getQuantity(), item.getSubTotal()));
-        }
-        sb.append(String.format("Total Price: $%.2f", getTotalPrice()));
-        return sb.toString();
+    StringBuilder sb = new StringBuilder();
+    sb.append(String.format("Order ID: %s%n", orderID));
+    sb.append(String.format("Customer: %s (%s)%n", customerName, customerID));
+    sb.append(String.format("Date: %s | Delivery: %s%n", orderDate, deliveryDate));
+    sb.append(String.format("Status: %s%n", status));
+    sb.append("Items Ordered:\n");
+    for (OrderItem item : items) {
+        sb.append(String.format(" - %s (x%d): $%.2f%n",
+                item.getItemName(), item.getQuantity(), item.getSubTotal()));
     }
+    sb.append(String.format("Total Price: $%.2f", getTotalPrice()));
+    return sb.toString();
+}
 
     public enum OrderStatus {
         PENDING,

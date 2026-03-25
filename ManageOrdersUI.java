@@ -1,6 +1,5 @@
-import java.util.HashMap;
+import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
 
 public class ManageOrdersUI {
@@ -39,15 +38,29 @@ public class ManageOrdersUI {
         }
     }
 
-    /* ================= EDIT FLOW ================= */
-
     private void editOrder(Order order) {
-
         displayEditForm(order);
 
-        Map<String, Object> updates = collectUpdatedData();
+        System.out.print("New Customer Name: ");
+        String newCustomerName = scanner.nextLine();
 
-        boolean updated = orderManager.editOrder(order.getOrderID(), updates);
+        System.out.print("New Delivery Date (YYYY-MM-DD, leave blank to keep current): ");
+        String deliveryDateInput = scanner.nextLine();
+
+        LocalDate newDeliveryDate = null;
+        if (!deliveryDateInput.isBlank()) {
+            newDeliveryDate = LocalDate.parse(deliveryDateInput);
+        }
+
+        // Keeping current items for now
+        List<OrderItem> newItems = null;
+
+        boolean updated = orderManager.editOrder(
+            order.getOrderID(),
+            newCustomerName,
+            newDeliveryDate,
+            newItems
+        );
 
         if (updated) {
             showSuccessMessage("Order updated successfully.");
@@ -56,10 +69,7 @@ public class ManageOrdersUI {
         }
     }
 
-    /* ================= DELETE FLOW ================= */
-
     private void deleteOrder(Order order) {
-
         if (!displayDeleteConfirmation()) {
             System.out.println("Deletion cancelled.");
             return;
@@ -74,10 +84,8 @@ public class ManageOrdersUI {
         }
     }
 
-    /* ================= SUPPORT METHODS ================= */
-
     public void displayOrderList() {
-        List<Order> orders = orderManager.getActiveOrders();
+        List<Order> orders = orderManager.getAllOrders();
 
         System.out.println("\n=== Existing Orders ===");
 
@@ -118,30 +126,6 @@ public class ManageOrdersUI {
     public void displayEditForm(Order order) {
         System.out.println("\n=== Edit Order ===");
         System.out.println("Leave blank to keep current values.");
-    }
-
-    private Map<String, Object> collectUpdatedData() {
-        Map<String, Object> updates = new HashMap<>();
-
-        System.out.print("New Customer ID: ");
-        String customerId = scanner.nextLine();
-        if (!customerId.isBlank()) {
-            updates.put("customerID", customerId);
-        }
-
-        System.out.print("New Delivery Date (YYYY-MM-DD): ");
-        String deliveryDate = scanner.nextLine();
-        if (!deliveryDate.isBlank()) {
-            updates.put("deliveryDate", deliveryDate);
-        }
-
-        System.out.print("New Status: ");
-        String status = scanner.nextLine();
-        if (!status.isBlank()) {
-            updates.put("status", status);
-        }
-
-        return updates;
     }
 
     public boolean displayDeleteConfirmation() {
