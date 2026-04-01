@@ -27,7 +27,8 @@ public class Main {
             CustomerRepository customerRepository = new CustomerRepository();
             CustomerManager customerManager = new CustomerManager(customerRepository);
             OrderRepository orderRepository = new OrderRepository("orders.txt");
-            OrderManager orderManager = new OrderManager(orderRepository);
+            OrderArchive archivedOrderRepository = new OrderArchive("archived_orders.txt");
+            OrderManager orderManager = new OrderManager(orderRepository, archivedOrderRepository);
 
             ManageOrdersUI ordersUI = new ManageOrdersUI(orderManager);
 

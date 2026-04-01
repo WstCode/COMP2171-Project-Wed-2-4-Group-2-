@@ -5,10 +5,12 @@ import java.util.List;
 public class OrderManager {
     private final List<Order> activeOrders;
     private final OrderRepository repository;
+    private final OrderArchive archivedOrderRepository;
 
-    public OrderManager(OrderRepository repository) {
+    public OrderManager(OrderRepository repository, OrderArchive archivedOrderRepository) {
         this.repository = repository;
-        this.activeOrders = new ArrayList<>();
+        this.archivedOrderRepository = archivedOrderRepository;
+        this.activeOrders = new ArrayList<>(repository.getAllOrders());
     }
 
     public Order createOrder(String customerID, String customerName, List<OrderItem> details, LocalDate deliveryDate) {
@@ -19,7 +21,7 @@ public class OrderManager {
             return null;
         }
 
-        String orderID = "ORD" + (repository.getAllOrders().size() + 1);
+        String orderID = "ORD" + (repository.getAllOrders().size() + archivedOrderRepository.getAllArchivedOrders().size() + 1);
         Order order = new Order(orderID, LocalDate.now(), deliveryDate, customerID, customerName);
 
         for (OrderItem item : details) {
@@ -35,6 +37,10 @@ public class OrderManager {
     }
 
     public List<Order> getAllOrders() {
+        return repository.getAllOrders();
+    }
+
+    public List<Order> getActiveOrders() {
         return repository.getAllOrders();
     }
 
@@ -77,5 +83,49 @@ public class OrderManager {
 
         activeOrders.remove(order);
         return repository.deleteOrder(orderID);
+    }
+
+    public List<Order> getOrdersWithApproachingDeadlines(int daysThreshold) {
+        List<Order> upcomingOrders = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+
+        for (Order order : repository.getAllOrders()) {
+            LocalDate deliveryDate = order.getDeliveryDate();
+
+            if (deliveryDate != null
+                    && !deliveryDate.isBefore(today)
+                    && !deliveryDate.isAfter(today.plusDays(daysThreshold))) {
+                upcomingOrders.add(order);
+            }
+        }
+
+        return upcomingOrders;
+    }
+
+    public boolean completeOrder(String orderID, String staffID) {
+        Order order = repository.findOrderById(orderID);
+
+        if (order == null) {
+            return false;
+        }
+
+        order.setStatus(Order.OrderStatus.COMPLETED);
+
+        boolean archived = archivedOrderRepository.saveArchivedOrder(order, staffID);
+        if (!archived) {
+            return false;
+        }
+
+        boolean deletedFromActive = repository.deleteOrder(orderID);
+        if (!deletedFromActive) {
+            return false;
+        }
+
+        activeOrders.remove(order);
+        return true;
+    }
+
+    public List<Order> getArchivedOrders() {
+        return archivedOrderRepository.getAllArchivedOrders();
     }
 }
