@@ -27,8 +27,8 @@ public class Main {
             CustomerRepository customerRepository = new CustomerRepository();
             CustomerManager customerManager = new CustomerManager(customerRepository);
             OrderRepository orderRepository = new OrderRepository("orders.txt");
-            OrderArchive archivedOrderRepository = new OrderArchive("archived_orders.txt");
-            OrderManager orderManager = new OrderManager(orderRepository, archivedOrderRepository);
+            OrderManager orderManager = new OrderManager(orderRepository);
+            OrderAlertService alertService = new OrderAlertService(4);//4 hour threshold
 
             ManageOrdersUI ordersUI = new ManageOrdersUI(orderManager);
 
@@ -47,6 +47,20 @@ public class Main {
 
                 switch (choice) {
                     case "1":
+                        List<Order> activeOrders = orderManager.getActiveOrders();
+
+                        List<OrderAlert> alerts = alertService.checkUpcomingOrders(activeOrders);
+                        if (!alerts.isEmpty()) {
+                            System.out.println("\n=== Alerts ===");
+                            for (OrderAlert alert : alerts) {
+                                System.out.println(alert.getMessage);
+                            }
+                        }
+                        if (activeOrders.isEmpty()){
+                            System.out.println("NO active Orders");
+                            break;
+                        }
+
                         ordersUI.displayOrderList();
                         break;
 
