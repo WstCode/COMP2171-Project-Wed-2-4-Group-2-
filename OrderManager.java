@@ -1,193 +1,131 @@
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
-public class Main {
-    public static void main(String[] args) {
-        try (Scanner scanner = new Scanner(System.in)) {
+public class OrderManager {
+    private final List<Order> activeOrders;
+    private final OrderRepository repository;
+    private final OrderArchive archivedOrderRepository;
 
-            BakeryStaff staff = new BakeryStaff("S001", "pass123");
-
-            System.out.println("=== Bakery Staff Login ===");
-
-            System.out.print("Enter staff ID: ");
-            String enteredID = scanner.nextLine();
-
-            System.out.print("Enter password: ");
-            String enteredPassword = scanner.nextLine();
-
-            if (!staff.login(enteredID, enteredPassword)) {
-                System.out.println("Login failed. Unauthorized user.");
-                return;
-            }
-
-            System.out.println("Login successful.");
-
-            CustomerRepository customerRepository = new CustomerRepository();
-            CustomerManager customerManager = new CustomerManager(customerRepository);
-            OrderRepository orderRepository = new OrderRepository("orders.txt");
-            OrderManager orderManager = new OrderManager(orderRepository);
-            OrderAlertService alertService = new OrderAlertService(4);//4 hour threshold
-
-            ManageOrdersUI ordersUI = new ManageOrdersUI(orderManager);
-
-            boolean running = true;
-
-            while (running) {
-                System.out.println("\n=== Home Menu ===");
-                System.out.println("1. View Active Orders");
-                System.out.println("2. Edit/Delete Orders");
-                System.out.println("3. Add Order");
-                System.out.println("4. Add Customer");
-                System.out.println("5. Exit");
-
-                System.out.print("Select an option: ");
-                String choice = scanner.nextLine();
-
-                switch (choice) {
-                    case "1":
-                        List<Order> activeOrders = orderManager.getActiveOrders();
-
-                        List<OrderAlert> alerts = alertService.checkUpcomingOrders(activeOrders);
-                        if (!alerts.isEmpty()) {
-                            System.out.println("\n=== Alerts ===");
-                            for (OrderAlert alert : alerts) {
-                                System.out.println(alert.getMessage);
-                            }
-                        }
-                        if (activeOrders.isEmpty()){
-                            System.out.println("NO active Orders");
-                            break;
-                        }
-
-                        ordersUI.displayOrderList();
-                        break;
-
-                    case "2":
-                        ordersUI.start();
-                        break;
-
-                    case "3":
-                        createOrderFlow(scanner, customerRepository, customerManager, orderManager, orderRepository);
-                        break;
-
-                    case "4":
-                        createCustomerFlow(scanner, customerManager);
-                        break;
-
-                    case "5":
-                        running = false;
-                        System.out.println("Exiting system...");
-                        break;
-
-                    default:
-                        System.out.println("Invalid option.");
-                }
-            }
-        }
+    public OrderManager(OrderRepository repository, OrderArchive archivedOrderRepository) {
+        this.repository = repository;
+        this.archivedOrderRepository = archivedOrderRepository;
+        this.activeOrders = new ArrayList<>(repository.getAllOrders());
     }
 
-    private static void createOrderFlow(
-            Scanner scanner,
-            CustomerRepository customerRepository,
-            CustomerManager customerManager,
-            OrderManager orderManager,
-            OrderRepository orderRepository) {
-
-        System.out.println("\n=== Create Order ===");
-
-        System.out.print("Enter customer ID: ");
-        String customerID = scanner.nextLine();
-
-        Customer customer = customerRepository.findCustomerById(customerID);
-
-        if (customer == null) {
-            System.out.println("Customer not found. Creating new customer.");
-
-            System.out.print("Enter name: ");
-            String name = scanner.nextLine();
-
-            System.out.print("Enter email: ");
-            String email = scanner.nextLine();
-
-            System.out.print("Enter phone: ");
-            String phone = scanner.nextLine();
-
-            System.out.print("Enter address: ");
-            String address = scanner.nextLine();
-
-            customer = customerManager.createCustomer(customerID, name, email, phone, address);
-
-            if (customer == null) {
-                System.out.println("Customer creation failed.");
-                return;
-            }
+    public Order createOrder(String customerID, String customerName, List<OrderItem> details, LocalDate deliveryDate) {
+        if (customerID == null || customerID.isBlank()
+                || customerName == null || customerName.isBlank()
+                || details == null || details.isEmpty()
+                || deliveryDate == null) {
+            return null;
         }
 
-        List<OrderItem> items = new ArrayList<>();
+        String orderID = "ORD" + (repository.getAllOrders().size() + archivedOrderRepository.getAllArchivedOrders().size() + 1);
+        Order order = new Order(orderID, LocalDate.now(), deliveryDate, customerID, customerName);
 
-        System.out.print("Item name: ");
-        String itemName = scanner.nextLine();
+        for (OrderItem item : details) {
+            order.addItem(item);
+        }
 
-        System.out.print("Quantity: ");
-        int qty = Integer.parseInt(scanner.nextLine());
+        if (!order.validateOrderData()) {
+            return null;
+        }
 
-        System.out.print("Price: ");
-        double price = Double.parseDouble(scanner.nextLine());
+        activeOrders.add(order);
+        return order;
+    }
 
-        items.add(new OrderItem(itemName, qty, price));
+    public List<Order> getAllOrders() {
+        return repository.getAllOrders();
+    }
 
-        System.out.print("Delivery date (YYYY-MM-DD): ");
-        LocalDate deliveryDate = LocalDate.parse(scanner.nextLine());
+    public List<Order> getActiveOrders() {
+        return repository.getAllOrders();
+    }
 
-        Order order = orderManager.createOrder(
-                customer.getCustomerID(),
-                customer.getName(),
-                items,
-                deliveryDate
-        );
+    public Order findOrderById(String orderID) {
+        return repository.findOrderById(orderID);
+    }
+
+    public boolean editOrder(String orderID, String newCustomerName, LocalDate newDeliveryDate, List<OrderItem> newItems) {
+        Order order = repository.findOrderById(orderID);
 
         if (order == null) {
-            System.out.println("Order creation failed.");
-            return;
+            return false;
         }
 
-        try {
-            orderRepository.saveOrder(order);
-        } catch (Exception e) {
-            System.out.println("Error saving order: " + e.getMessage());
-            return;
+        if (newCustomerName != null && !newCustomerName.isBlank()) {
+            order.setCustomerName(newCustomerName);
         }
 
-        System.out.println("Order created successfully!");
-        System.out.println(order.getOrderDetails());
+        if (newDeliveryDate != null) {
+            order.setDeliveryDate(newDeliveryDate);
+        }
+
+        if (newItems != null && !newItems.isEmpty()) {
+            order.setItems(newItems);
+        }
+
+        if (!order.validateOrderData()) {
+            return false;
+        }
+
+        return repository.updateOrder(order);
     }
 
-    private static void createCustomerFlow(Scanner scanner, CustomerManager manager) {
-        System.out.println("\n=== Create Customer ===");
+    public boolean deleteOrder(String orderID) {
+        Order order = repository.findOrderById(orderID);
 
-        System.out.print("ID: ");
-        String id = scanner.nextLine();
-
-        System.out.print("Name: ");
-        String name = scanner.nextLine();
-
-        System.out.print("Email: ");
-        String email = scanner.nextLine();
-
-        System.out.print("Phone: ");
-        String phone = scanner.nextLine();
-
-        System.out.print("Address: ");
-        String address = scanner.nextLine();
-
-        Customer customer = manager.createCustomer(id, name, email, phone, address);
-
-        if (customer != null) {
-            System.out.println("Customer created successfully.");
-        } else {
-            System.out.println("Failed to create customer.");
+        if (order == null) {
+            return false;
         }
+
+        activeOrders.remove(order);
+        return repository.deleteOrder(orderID);
+    }
+
+    public List<Order> getOrdersWithApproachingDeadlines(int daysThreshold) {
+        List<Order> upcomingOrders = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+
+        for (Order order : repository.getAllOrders()) {
+            LocalDate deliveryDate = order.getDeliveryDate();
+
+            if (deliveryDate != null
+                    && !deliveryDate.isBefore(today)
+                    && !deliveryDate.isAfter(today.plusDays(daysThreshold))) {
+                upcomingOrders.add(order);
+            }
+        }
+
+        return upcomingOrders;
+    }
+
+    public boolean completeOrder(String orderID, String staffID) {
+        Order order = repository.findOrderById(orderID);
+
+        if (order == null) {
+            return false;
+        }
+
+        order.setStatus(Order.OrderStatus.COMPLETED);
+
+        boolean archived = archivedOrderRepository.saveArchivedOrder(order, staffID);
+        if (!archived) {
+            return false;
+        }
+
+        boolean deletedFromActive = repository.deleteOrder(orderID);
+        if (!deletedFromActive) {
+            return false;
+        }
+
+        activeOrders.remove(order);
+        return true;
+    }
+
+    public List<Order> getArchivedOrders() {
+        return archivedOrderRepository.getAllArchivedOrders();
     }
 }
