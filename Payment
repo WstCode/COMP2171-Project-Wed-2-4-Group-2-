@@ -2,14 +2,12 @@ import java.time.LocalDateTime;
 
 public class Payment {
 
-    // 🔷 Attributes
     private String paymentID;
     private String orderID;
     private PaymentInfo status;
     private PaymentInfo method;
     private LocalDateTime lastUpdated;
 
-    // 🔷 Constructor
     public Payment(String paymentID, String orderID, PaymentInfo status, PaymentInfo method) {
         this.paymentID = paymentID;
         this.orderID = orderID;
@@ -18,7 +16,6 @@ public class Payment {
         this.lastUpdated = LocalDateTime.now();
     }
 
-    // 🔷 Getters
     public String getPaymentID() {
         return paymentID;
     }
@@ -39,7 +36,6 @@ public class Payment {
         return lastUpdated;
     }
 
-    // 🔷 Update Methods
     public void updateStatus(PaymentInfo status) {
         this.status = status;
         this.lastUpdated = LocalDateTime.now();
@@ -50,7 +46,6 @@ public class Payment {
         this.lastUpdated = LocalDateTime.now();
     }
 
-    // 🔷 Validation Method
     public boolean validate() {
 
         // Valid status values
@@ -69,7 +64,6 @@ public class Payment {
         return true;
     }
 
-    // 🔷 Display Method
     public String getPaymentDetails() {
         return "Payment ID: " + paymentID +
                "\nOrder ID: " + orderID +
