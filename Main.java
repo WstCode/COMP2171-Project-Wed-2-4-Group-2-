@@ -27,7 +27,9 @@ public class Main {
             CustomerRepository customerRepository = new CustomerRepository();
             CustomerManager customerManager = new CustomerManager(customerRepository);
             OrderRepository orderRepository = new OrderRepository("orders.txt");
-            OrderManager orderManager = new OrderManager(orderRepository);
+            OrderArchive archiveOrderRepository = new OrderArchive("archived_orders.txt");
+            PaymentRepository paymentRepository = new PaymentRepository("payments.txt");
+            OrderManager orderManager = new OrderManager(orderRepository, archiveOrderRepository, paymentRepository);
             OrderAlertService alertService = new OrderAlertService(4);//4 hour threshold
 
             ManageOrdersUI ordersUI = new ManageOrdersUI(orderManager);
@@ -53,7 +55,7 @@ public class Main {
                         if (!alerts.isEmpty()) {
                             System.out.println("\n=== Alerts ===");
                             for (OrderAlert alert : alerts) {
-                                System.out.println(alert.getMessage);
+                                System.out.println(alert.getMessage());
                             }
                         }
                         if (activeOrders.isEmpty()){
