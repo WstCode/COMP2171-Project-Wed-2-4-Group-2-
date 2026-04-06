@@ -121,8 +121,8 @@ public class PaymentRepository {
 
             String paymentID = "";
             String orderID = "";
-            PaymentStatus status = null;
-            PaymentMethod method = null;
+            PaymentInfo status = null;
+            PaymentInfo method = null;
             LocalDateTime lastUpdated = null;
 
             for (String line : lines) {
@@ -133,9 +133,9 @@ public class PaymentRepository {
                 } else if (line.startsWith("Order ID: ")) {
                     orderID = line.substring("Order ID: ".length()).trim();
                 } else if (line.startsWith("Status: ")) {
-                    status = PaymentStatus.valueOf(line.substring("Status: ".length()).trim());
+                    status = PaymentInfo.valueOf(line.substring("Status: ".length()).trim());
                 } else if (line.startsWith("Method: ")) {
-                    method = PaymentMethod.valueOf(line.substring("Method: ".length()).trim());
+                    method = PaymentInfo.valueOf(line.substring("Method: ".length()).trim());
                 } else if (line.startsWith("Last Updated: ")) {
                     lastUpdated = LocalDateTime.parse(line.substring("Last Updated: ".length()).trim());
                 }
@@ -147,7 +147,7 @@ public class PaymentRepository {
 
             Payment payment = new Payment(paymentID, orderID, status, method);
             if (lastUpdated != null) {
-                payment.setLastUpdated(lastUpdated);
+                payment.getLastUpdated();
             }
 
             return payment;

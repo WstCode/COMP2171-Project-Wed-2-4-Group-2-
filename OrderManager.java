@@ -145,7 +145,7 @@ public class OrderManager {
         return paymentRepository.findPaymentByOrderID(orderID);
     }
 
-    public boolean updatePayment(String orderID, PaymentStatus status, PaymentMethod method) {
+    public boolean updatePayment(String orderID, PaymentInfo status, PaymentInfo method) {
         Order order = repository.findOrderById(orderID);
 
         if (order == null || status == null || method == null) {
@@ -166,7 +166,7 @@ public class OrderManager {
         return paymentRepository.updatePayment(payment);
     }
 
-    public boolean validatePayment(PaymentStatus status, PaymentMethod method) {
+    public boolean validatePayment(PaymentInfo status, PaymentInfo method) {
         return status != null && method != null;
     }
 }
