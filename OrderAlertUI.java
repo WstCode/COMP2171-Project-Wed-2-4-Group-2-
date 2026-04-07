@@ -11,7 +11,6 @@ public class OrderAlertUI {
         this.alertService = alertService;
     }
 
-    // 🔹 Step 1: Get upcoming (alerted) orders
     public List<Order> viewActiveOrders() {
         List<OrderAlert> alerts = alertService.getActiveAlerts();
         List<Order> activeOrders = new ArrayList<>();
@@ -21,7 +20,7 @@ public class OrderAlertUI {
         }
 
         for (OrderAlert alert : alerts) {
-            Order order = orderManager.findOrderByID(alert.getOrderID());
+            Order order = orderManager.findOrderById(alert.getOrderID());
             if (order != null) {
                 activeOrders.add(order);
             }
@@ -30,7 +29,6 @@ public class OrderAlertUI {
         return activeOrders;
     }
 
-    // 🔹 Step 2: Display list of upcoming orders
     public void displayActiveOrders(List<Order> orders) {
         System.out.println("\nUpcoming Orders (Approaching Deadline):");
 
@@ -43,9 +41,8 @@ public class OrderAlertUI {
         }
     }
 
-    // 🔹 Step 3: Select order
     public Order selectOrder(String orderID) {
-        Order order = orderManager.findOrderByID(orderID);
+        Order order = orderManager.findOrderById(orderID);
 
         if (order == null) {
             showError("Order not found.");
@@ -54,7 +51,6 @@ public class OrderAlertUI {
         return order;
     }
 
-    // 🔹 Step 4: Display full order details
     public void displayOrderDetails(Order order) {
         if (order == null) {
             showError("Invalid order.");
