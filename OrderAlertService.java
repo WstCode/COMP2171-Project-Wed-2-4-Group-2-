@@ -60,7 +60,7 @@ public class OrderAlertService {
         System.out.println("Monitoring deadlines...");
     }
 
-    // helper method (not in UML, but allowed as private)
+    
     private boolean alertExists(String orderID) {
         for (OrderAlert alert : alertList) {
             if (alert.getOrderID().equals(orderID) && alert.isActive()) {
