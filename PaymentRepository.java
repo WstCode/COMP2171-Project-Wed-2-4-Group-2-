@@ -18,6 +18,7 @@ public class PaymentRepository {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(paymentRecordsFile, true))) {
             writer.write(payment.getPaymentDetails());
+            writer.newLine();
             writer.write(SEPARATOR);
             writer.newLine();
         } catch (IOException e) {
@@ -107,6 +108,7 @@ public class PaymentRepository {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(paymentRecordsFile, false))) {
             for (Payment payment : payments) {
                 writer.write(payment.getPaymentDetails());
+                writer.newLine();
                 writer.write(SEPARATOR);
                 writer.newLine();
             }
@@ -137,7 +139,10 @@ public class PaymentRepository {
                 } else if (line.startsWith("Method: ")) {
                     method = PaymentInfo.valueOf(line.substring("Method: ".length()).trim());
                 } else if (line.startsWith("Last Updated: ")) {
-                    lastUpdated = LocalDateTime.parse(line.substring("Last Updated: ".length()).trim());
+                    String clean = line.substring("Last Updated: ".length())
+                                    .replace(SEPARATOR, "")
+                                    .trim();
+                    lastUpdated = LocalDateTime.parse(clean);
                 }
             }
 
