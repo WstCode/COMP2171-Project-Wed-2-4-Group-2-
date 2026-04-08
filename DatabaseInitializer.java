@@ -14,7 +14,7 @@ public class DatabaseInitializer {
                 ")"
             );
 
-            System.out.println("Database initialized.");
+            System.out.println("Database ready.");
 
         } catch (Exception e) {
             System.out.println("Database initialization failed.");
