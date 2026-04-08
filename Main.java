@@ -1,7 +1,11 @@
 import javax.swing.SwingUtilities;
+import java.sql.Connection;
 
 public class Main {
     public static void main(String[] args) {
+
+        Connection conn = DatabaseService.initializeDatabase();
+
         SwingUtilities.invokeLater(() -> {
             BakeryStaff staff = new BakeryStaff("S001", "pass123");
 
