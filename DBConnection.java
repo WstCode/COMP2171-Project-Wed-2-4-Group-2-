@@ -8,7 +8,8 @@ public class DBConnection {
     public static Connection getConnection() {
         try {
             Properties props = new Properties();
-            props.load(new FileInputStream("config/db.properties"));
+            
+            props.load(new FileInputStream("db.properties"));
 
             String url = props.getProperty("db.url");
             String user = props.getProperty("db.user");
