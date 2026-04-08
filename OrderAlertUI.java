@@ -1,72 +1,75 @@
-import java.util.ArrayList;
+import javax.swing.*;
+import java.awt.*;
 import java.util.List;
 
-public class OrderAlertUI {
-
-    private OrderManager orderManager;
-    private OrderAlertService alertService;
+public class OrderAlertUI extends JFrame {
+    private final OrderManager orderManager;
+    private final OrderAlertService alertService;
+    private final DefaultListModel<String> listModel;
+    private final JList<String> alertList;
 
     public OrderAlertUI(OrderManager orderManager, OrderAlertService alertService) {
         this.orderManager = orderManager;
         this.alertService = alertService;
+
+        setTitle("Order Alerts");
+        setSize(500, 350);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+
+        listModel = new DefaultListModel<>();
+        alertList = new JList<>(listModel);
+
+        JButton refreshBtn = new JButton("Refresh Alerts");
+        JButton viewOrdersBtn = new JButton("View Orders Near Deadline");
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(refreshBtn);
+        buttonPanel.add(viewOrdersBtn);
+
+        add(new JScrollPane(alertList), BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        refreshBtn.addActionListener(e -> loadAlerts());
+        viewOrdersBtn.addActionListener(e -> showOrdersNearDeadline());
+
+        loadAlerts();
+        setVisible(true);
     }
 
-    public List<Order> viewActiveOrders() {
-        List<OrderAlert> alerts = alertService.getActiveAlerts();
-        List<Order> activeOrders = new ArrayList<>();
+    private void loadAlerts() {
+        listModel.clear();
 
-        if (alerts == null || alerts.isEmpty()) {
-            return activeOrders;
-        }
+        List<OrderAlert> alerts = alertService.checkUpcomingOrders(orderManager.getActiveOrders());
 
-        for (OrderAlert alert : alerts) {
-            Order order = orderManager.findOrderById(alert.getOrderID());
-            if (order != null) {
-                activeOrders.add(order);
-            }
-        }
-
-        return activeOrders;
-    }
-
-    public void displayActiveOrders(List<Order> orders) {
-        System.out.println("\nUpcoming Orders (Approaching Deadline):");
-
-        for (Order order : orders) {
-            System.out.println(
-                "Order ID: " + order.getOrderID() +
-                " | Customer: " + order.getCustomerName() +
-                " | Delivery Date: " + order.getDeliveryDate()
-            );
-        }
-    }
-
-    public Order selectOrder(String orderID) {
-        Order order = orderManager.findOrderById(orderID);
-
-        if (order == null) {
-            showError("Order not found.");
-        }
-
-        return order;
-    }
-
-    public void displayOrderDetails(Order order) {
-        if (order == null) {
-            showError("Invalid order.");
+        if (alerts.isEmpty()) {
+            listModel.addElement("No upcoming order alerts.");
             return;
         }
 
-        System.out.println("\nOrder Details:");
-        System.out.println("Order ID: " + order.getOrderID());
-        System.out.println("Customer Name: " + order.getCustomerName());
-        System.out.println("Customer ID: " + order.getCustomerID());
-        System.out.println("Order Date: " + order.getOrderDate());
-        System.out.println("Delivery/Pickup Date: " + order.getDeliveryDate());
+        for (OrderAlert alert : alerts) {
+            listModel.addElement(alert.getMessage());
+        }
     }
 
-    // 🔹 Error handling
-    public void showError(String message) {
-        System.out.println("ERROR: " + message);
+    private void showOrdersNearDeadline() {
+        List<Order> orders = orderManager.getOrdersWithApproachingDeadlines(4);
+
+        if (orders.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No orders with approaching deadlines.");
+            return;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (Order order : orders) {
+            sb.append("Order ID: ").append(order.getOrderID())
+              .append(" | Customer: ").append(order.getCustomerName())
+              .append(" | Delivery Date: ").append(order.getDeliveryDate())
+              .append("\n");
+        }
+
+        JTextArea area = new JTextArea(sb.toString());
+        area.setEditable(false);
+        JOptionPane.showMessageDialog(this, new JScrollPane(area), "Orders Near Deadline", JOptionPane.INFORMATION_MESSAGE);
     }
 }

@@ -36,6 +36,10 @@ public class Payment {
         return lastUpdated;
     }
 
+    public void setLastUpdated(LocalDateTime lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+
     public void updateStatus(PaymentInfo status) {
         this.status = status;
         this.lastUpdated = LocalDateTime.now();
@@ -47,21 +51,11 @@ public class Payment {
     }
 
     public boolean validate() {
-
-        // Valid status values
-        if (!(status == PaymentInfo.PAID ||
-              status == PaymentInfo.PENDING ||
-              status == PaymentInfo.OVERDUE)) {
-            return false;
-        }
-
-        // Valid method values
-        if (!(method == PaymentInfo.POS_ON_DELIVERY ||
-              method == PaymentInfo.BANK_TRANSFER)) {
-            return false;
-        }
-
-        return true;
+        return paymentID != null && !paymentID.isBlank()
+                && orderID != null && !orderID.isBlank()
+                && status != null && status.isStatus()
+                && method != null && method.isMethod()
+                && lastUpdated != null;
     }
 
     public String getPaymentDetails() {

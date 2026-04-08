@@ -1,128 +1,110 @@
-import java.util.Scanner;
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
 
-public class ManagePaymentUI {
+public class ManagePaymentUI extends JFrame {
+    private final PaymentManager paymentManager;
+    private final OrderManager orderManager;
 
-    // Attributes
-    private PaymentManager paymentManager;
-    private OrderManager orderManager;
-    private Scanner scanner;
+    private JComboBox<String> statusBox;
+    private JComboBox<String> methodBox;
+    private DefaultListModel<String> listModel;
+    private JList<String> orderList;
 
-    // Constructor
     public ManagePaymentUI(PaymentManager paymentManager, OrderManager orderManager) {
         this.paymentManager = paymentManager;
         this.orderManager = orderManager;
-        this.scanner = new Scanner(System.in);
+
+        setTitle("Manage Payment");
+        setSize(550, 420);
+        setLocationRelativeTo(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setLayout(new BorderLayout());
+
+        listModel = new DefaultListModel<>();
+        orderList = new JList<>(listModel);
+
+        JPanel formPanel = new JPanel(new GridLayout(2, 2, 10, 10));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        formPanel.add(new JLabel("Payment Status:"));
+        statusBox = new JComboBox<>(new String[]{"PAID", "PENDING", "OVERDUE"});
+        formPanel.add(statusBox);
+
+        formPanel.add(new JLabel("Payment Method:"));
+        methodBox = new JComboBox<>(new String[]{"POS_ON_DELIVERY", "BANK_TRANSFER"});
+        formPanel.add(methodBox);
+
+        JButton refreshBtn = new JButton("Refresh Orders");
+        JButton viewBtn = new JButton("View Current Payment");
+        JButton saveBtn = new JButton("Save Payment");
+
+        JPanel buttonPanel = new JPanel();
+        buttonPanel.add(refreshBtn);
+        buttonPanel.add(viewBtn);
+        buttonPanel.add(saveBtn);
+
+        add(new JScrollPane(orderList), BorderLayout.CENTER);
+        add(formPanel, BorderLayout.NORTH);
+        add(buttonPanel, BorderLayout.SOUTH);
+
+        refreshBtn.addActionListener(e -> loadOrders());
+        viewBtn.addActionListener(e -> viewPayment());
+        saveBtn.addActionListener(e -> savePayment());
+
+        loadOrders();
+        setVisible(true);
     }
 
-    // Main method to run the use case
-    public void managePayment() {
+    private void loadOrders() {
+        listModel.clear();
+        List<Order> orders = orderManager.getActiveOrders();
 
-        // Step 1: Select Order
-        System.out.print("Enter Order ID: ");
-        String orderID = scanner.nextLine();
+        for (Order order : orders) {
+            listModel.addElement(order.getOrderID() + " | " + order.getCustomerName() + " | " + order.getStatus());
+        }
+    }
 
-        Order order = orderManager.findOrderById(orderID);
+    private String getSelectedOrderId() {
+        String selected = orderList.getSelectedValue();
+        if (selected == null) return null;
+        return selected.split("\\|")[0].trim();
+    }
 
-        if (order == null) {
-            showErrorMessage("Order not found");
+    private void viewPayment() {
+        String orderId = getSelectedOrderId();
+        if (orderId == null) {
+            JOptionPane.showMessageDialog(this, "Select an order first.");
             return;
         }
 
-        // Step 2: Retrieve and display payment info
-        Payment payment = paymentManager.getPayment(orderID);
+        Payment payment = paymentManager.getPayment(orderId);
 
-        if (payment != null) {
-            displayPaymentDetails(payment);
+        if (payment == null) {
+            JOptionPane.showMessageDialog(this, "No payment record found for this order.");
         } else {
-            System.out.println("No existing payment record. Creating new one...");
+            JTextArea area = new JTextArea(payment.getPaymentDetails());
+            area.setEditable(false);
+            JOptionPane.showMessageDialog(this, new JScrollPane(area), "Payment Details", JOptionPane.INFORMATION_MESSAGE);
         }
+    }
 
-        // Step 3: Input payment details
-        PaymentInfo status = inputStatus();
-        PaymentInfo method = inputMethod();
-
-        // Step 4: Validate before confirming
-        if (!paymentManager.validatePayment(status, method)) {
-            showErrorMessage("Invalid payment data");
+    private void savePayment() {
+        String orderId = getSelectedOrderId();
+        if (orderId == null) {
+            JOptionPane.showMessageDialog(this, "Select an order first.");
             return;
         }
 
-        // Step 5: Confirm update
-        if (!confirmUpdate()) {
-            System.out.println("Update cancelled. Returning to Home Menu...");
-            return;
-        }
+        PaymentInfo status = PaymentInfo.valueOf((String) statusBox.getSelectedItem());
+        PaymentInfo method = PaymentInfo.valueOf((String) methodBox.getSelectedItem());
 
-        // Step 6: Update payment
-        boolean success = paymentManager.updatePayment(orderID, status, method);
+        boolean success = paymentManager.updatePayment(orderId, status, method);
 
-        // Step 7: Display result
         if (success) {
-            showSuccessMessage();
+            JOptionPane.showMessageDialog(this, "Payment saved successfully.");
         } else {
-            showErrorMessage("Payment update failed");
+            JOptionPane.showMessageDialog(this, "Failed to save payment.");
         }
-    }
-
-    // Display payment details
-    public void displayPaymentDetails(Payment payment) {
-        System.out.println("\n--- Current Payment Details ---");
-        System.out.println(payment.getPaymentDetails());
-    }
-
-    // Input Status
-    private PaymentInfo inputStatus() {
-        System.out.println("\nSelect Payment Status:");
-        System.out.println("1. PAID");
-        System.out.println("2. PENDING");
-        System.out.println("3. OVERDUE");
-
-        int choice = scanner.nextInt();
-        scanner.nextLine(); // clear buffer
-
-        switch (choice) {
-            case 1: return PaymentInfo.PAID;
-            case 2: return PaymentInfo.PENDING;
-            case 3: return PaymentInfo.OVERDUE;
-            default:
-                showErrorMessage("Invalid choice");
-                return inputStatus(); // retry
-        }
-    }
-
-    // Input Method
-    private PaymentInfo inputMethod() {
-        System.out.println("\nSelect Payment Method:");
-        System.out.println("1. POS_ON_DELIVERY");
-        System.out.println("2. BANK_TRANSFER");
-
-        int choice = scanner.nextInt();
-        scanner.nextLine(); // clear buffer
-
-        switch (choice) {
-            case 1: return PaymentInfo.POS_ON_DELIVERY;
-            case 2: return PaymentInfo.BANK_TRANSFER;
-            default:
-                showErrorMessage("Invalid choice");
-                return inputMethod(); // retry
-        }
-    }
-
-    // Confirm update
-    public boolean confirmUpdate() {
-        System.out.print("\nConfirm update? (yes/no): ");
-        String input = scanner.nextLine();
-
-        return input.equalsIgnoreCase("yes");
-    }
-
-    // Success message
-    public void showSuccessMessage() {
-        System.out.println("Payment recorded!");
-    }
-
-    // Error message
-    public void showErrorMessage(String message) {
-        System.out.println("Error: " + message);
     }
 }

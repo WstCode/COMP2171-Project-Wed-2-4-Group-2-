@@ -139,9 +139,7 @@ public class PaymentRepository {
                 } else if (line.startsWith("Method: ")) {
                     method = PaymentInfo.valueOf(line.substring("Method: ".length()).trim());
                 } else if (line.startsWith("Last Updated: ")) {
-                    String clean = line.substring("Last Updated: ".length())
-                                    .replace(SEPARATOR, "")
-                                    .trim();
+                    String clean = line.substring("Last Updated: ".length()).replace(SEPARATOR, "").trim();
                     lastUpdated = LocalDateTime.parse(clean);
                 }
             }
@@ -152,7 +150,7 @@ public class PaymentRepository {
 
             Payment payment = new Payment(paymentID, orderID, status, method);
             if (lastUpdated != null) {
-                payment.getLastUpdated();
+                payment.setLastUpdated(lastUpdated);
             }
 
             return payment;
