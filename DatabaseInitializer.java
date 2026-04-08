@@ -10,7 +10,6 @@ public class DatabaseInitializer {
                 "CREATE TABLE IF NOT EXISTS users (" +
                 "staffID INT AUTO_INCREMENT PRIMARY KEY," +
                 "password VARCHAR(100)," +
-                "email VARCHAR(100)" +
                 ")"
             );
 
