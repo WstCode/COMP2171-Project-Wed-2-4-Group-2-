@@ -13,6 +13,14 @@ public class DatabaseInitializer {
                 ")"
             );
 
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS orders (" + 
+                ")"
+            );
+
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS payments (" + 
+                ")"
+            );
+
             System.out.println("Database ready.");
 
         } catch (Exception e) {
