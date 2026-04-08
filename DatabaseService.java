@@ -10,9 +10,8 @@ public class DatabaseService {
             return null;
         }
 
-        System.out.println("Connected to online database.");
+        System.out.println("Connected to database.");
 
-        // Initialize tables
         DatabaseInitializer.initialize(conn);
 
         return conn;
