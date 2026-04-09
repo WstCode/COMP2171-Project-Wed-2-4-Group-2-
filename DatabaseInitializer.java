@@ -8,8 +8,9 @@ public class DatabaseInitializer {
 
             stmt.executeUpdate(
                 "CREATE TABLE IF NOT EXISTS users (" +
-                "staffID INT AUTO_INCREMENT PRIMARY KEY," +
-                "password VARCHAR(100)," +
+                "staffID VARCHAR(50) PRIMARY KEY," +
+                "password VARCHAR(100) NOT NULL," +
+                "loggedIn BOOLEAN NOT NULL DEFAULT FALSE" +
                 ")"
             );
 
