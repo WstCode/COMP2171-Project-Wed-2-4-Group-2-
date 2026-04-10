@@ -28,6 +28,12 @@ public class DatabaseInitializer {
             );
 
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS order_items (" +
+                "itemID INT AUTO_INCREMENT PRIMARY KEY," +
+                "orderID VARCHAR(50) NOT NULL," +
+                "itemName VARCHAR(100) NOT NULL," +
+                "quantity INT NOT NULL," +
+                "unitPrice DECIMAL(10,2) NOT NULL," +
+                "FOREIGN KEY (orderID) REFERENCES orders(orderID) ON DELETE CASCADE" +
                 ")"
             );
 
