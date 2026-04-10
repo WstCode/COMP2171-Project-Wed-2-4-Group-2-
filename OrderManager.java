@@ -38,6 +38,7 @@ public class OrderManager {
             return null;
         }
 
+        repository.saveOrder(order);
         activeOrders.add(order);
         return order;
     }
