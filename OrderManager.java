@@ -57,7 +57,7 @@ public class OrderManager {
         List<Order> activeOrders = new ArrayList<>();
 
         for (Order order : repository.getAllOrders()) {
-            if (order.getStatus() == Order.OrderStatus.PENDING) {
+            if (order.getStatus() != Order.OrderStatus.COMPLETED) {
                 activeOrders.add(order);
             }
         }
