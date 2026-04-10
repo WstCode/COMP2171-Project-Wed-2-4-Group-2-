@@ -37,10 +37,12 @@ public class DatabaseInitializer {
                 ")"
             );
 
+            /*
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS order_archive (" +
                 "" +
                 ")"
             );
+            */
 
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS payments (" +
                 "paymentID VARCHAR(50) PRIMARY KEY," +
