@@ -1,217 +1,179 @@
-import java.io.*;
+import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 public class OrderRepository {
 
-    private final String orderRecordsFile;
-    private static final String SEPARATOR = "----------------------------------";
+    private final Connection conn;
+    private final OrderFileBackup backup;
 
-    public OrderRepository(String orderRecordsFile) {
-        this.orderRecordsFile = orderRecordsFile;
+    public OrderRepository(Connection conn) {
+        this.conn = conn;
+        this.backup = new OrderFileBackup("orders_backup.txt");
     }
 
-    public void saveOrder(Order order) throws IOException {
-        if (order == null) {
-            throw new IllegalArgumentException("Order cannot be null.");
-        }
+    public void saveOrder(Order order) {
+        String orderSQL = """
+            INSERT INTO orders 
+            (orderID, orderDate, status, deliveryDate, customerID, pickupTime, completedDateTime, paymentID, customerName)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """;
 
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(orderRecordsFile, true))) {
-            writer.write(order.getOrderDetails());
-            writer.newLine();
-            writer.write(SEPARATOR);
-            writer.newLine();
+        String itemSQL = """
+            INSERT INTO order_items (orderID, itemName, quantity, unitPrice)
+            VALUES (?, ?, ?, ?)
+        """;
+
+        try {
+            if (conn == null || conn.isClosed()) {
+                throw new SQLException("Connection unavailable");
+            }
+
+            conn.setAutoCommit(false);
+
+            try (
+                PreparedStatement orderStmt = conn.prepareStatement(orderSQL);
+                PreparedStatement itemStmt = conn.prepareStatement(itemSQL)
+            ) {
+                
+                orderStmt.setString(1, order.getOrderID());
+                orderStmt.setDate(2, Date.valueOf(order.getOrderDate()));
+                orderStmt.setString(3, order.getStatus().name());
+                orderStmt.setDate(4, Date.valueOf(order.getDeliveryDate()));
+                orderStmt.setString(5, order.getCustomerID());
+
+                orderStmt.setTimestamp(6, null); // pickupTime
+                orderStmt.setTimestamp(7, null); // completedDateTime
+                orderStmt.setString(8, null);    // paymentID
+
+                orderStmt.setString(9, order.getCustomerName());
+
+                orderStmt.executeUpdate();
+
+                for (OrderItem item : order.getItems()) {
+                    itemStmt.setString(1, order.getOrderID());
+                    itemStmt.setString(2, item.getItemName());
+                    itemStmt.setInt(3, item.getQuantity());
+                    itemStmt.setDouble(4, item.getUnitPrice());
+                    itemStmt.executeUpdate();
+                }
+
+                conn.commit();
+
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
+            }
+
+        } catch (Exception e) {
+            System.out.println("⚠️ DB failed → saving to file backup");
+            backup.saveOrder(order);
         }
     }
 
     public List<Order> getAllOrders() {
         List<Order> orders = new ArrayList<>();
-        File file = new File(orderRecordsFile);
 
-        if (!file.exists()) {
-            return orders;
-        }
+        String orderSQL = "SELECT * FROM orders";
+        String itemSQL = "SELECT * FROM order_items WHERE orderID = ?";
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            StringBuilder block = new StringBuilder();
-            String line;
+        try (
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(orderSQL)
+        ) {
+            while (rs.next()) {
+                Order order = new Order(
+                        rs.getString("orderID"),
+                        rs.getDate("orderDate").toLocalDate(),
+                        rs.getDate("deliveryDate").toLocalDate(),
+                        rs.getString("customerID"),
+                        rs.getString("customerName")
+                );
 
-            while ((line = reader.readLine()) != null) {
-                if (line.equals(SEPARATOR)) {
-                    if (block.length() > 0) {
-                        Order order = parseOrderBlock(block.toString().trim());
-                        if (order != null) {
-                            orders.add(order);
-                        }
-                        block = new StringBuilder();
+                order.setStatus(
+                        Order.OrderStatus.valueOf(rs.getString("status"))
+                );
+
+                // 🔹 Load items
+                try (PreparedStatement itemStmt = conn.prepareStatement(itemSQL)) {
+                    itemStmt.setString(1, order.getOrderID());
+                    ResultSet itemRS = itemStmt.executeQuery();
+
+                    while (itemRS.next()) {
+                        order.addItem(new OrderItem(
+                                itemRS.getString("itemName"),
+                                itemRS.getInt("quantity"),
+                                itemRS.getDouble("unitPrice")
+                        ));
                     }
-                } else {
-                    block.append(line).append("\n");
                 }
+
+                orders.add(order);
             }
 
-            if (block.length() > 0) {
-                Order order = parseOrderBlock(block.toString().trim());
-                if (order != null) {
-                    orders.add(order);
-                }
-            }
-
-        } catch (IOException e) {
-            System.out.println("Error reading orders: " + e.getMessage());
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
         return orders;
     }
 
     public Order findOrderById(String orderID) {
-        if (orderID == null || orderID.trim().isEmpty()) {
-            throw new IllegalArgumentException("Order ID cannot be null or empty.");
-        }
+        String orderSQL = "SELECT * FROM orders WHERE orderID = ?";
+        String itemSQL = "SELECT * FROM order_items WHERE orderID = ?";
 
-        for (Order order : getAllOrders()) {
-            if (order.getOrderID().equals(orderID)) {
+        try (PreparedStatement stmt = conn.prepareStatement(orderSQL)) {
+            stmt.setString(1, orderID);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                Order order = new Order(
+                        orderID,
+                        rs.getDate("orderDate").toLocalDate(),
+                        rs.getDate("deliveryDate").toLocalDate(),
+                        rs.getString("customerID"),
+                        rs.getString("customerName")
+                );
+
+                order.setStatus(
+                        Order.OrderStatus.valueOf(rs.getString("status"))
+                );
+
+                try (PreparedStatement itemStmt = conn.prepareStatement(itemSQL)) {
+                    itemStmt.setString(1, orderID);
+                    ResultSet itemRS = itemStmt.executeQuery();
+
+                    while (itemRS.next()) {
+                        order.addItem(new OrderItem(
+                                itemRS.getString("itemName"),
+                                itemRS.getInt("quantity"),
+                                itemRS.getDouble("unitPrice")
+                        ));
+                    }
+                }
+
                 return order;
             }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
         return null;
-    }
-
-    public boolean updateOrder(Order updatedOrder) {
-        if (updatedOrder == null) {
-            throw new IllegalArgumentException("Order cannot be null.");
-        }
-
-        List<Order> allOrders = getAllOrders();
-        boolean found = false;
-
-        for (int i = 0; i < allOrders.size(); i++) {
-            if (allOrders.get(i).getOrderID().equals(updatedOrder.getOrderID())) {
-                allOrders.set(i, updatedOrder);
-                found = true;
-                break;
-            }
-        }
-
-        if (found) {
-            rewriteAllOrders(allOrders);
-        }
-
-        return found;
     }
 
     public boolean deleteOrder(String orderID) {
-        if (orderID == null || orderID.trim().isEmpty()) {
-            throw new IllegalArgumentException("Order ID cannot be null or empty.");
+        String sql = "DELETE FROM orders WHERE orderID = ?";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, orderID);
+            return stmt.executeUpdate() > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
 
-        List<Order> allOrders = getAllOrders();
-        boolean found = false;
-
-        for (int i = 0; i < allOrders.size(); i++) {
-            if (allOrders.get(i).getOrderID().equals(orderID)) {
-                allOrders.remove(i);
-                found = true;
-                break;
-            }
-        }
-
-        if (found) {
-            rewriteAllOrders(allOrders);
-        }
-
-        return found;
+        return false;
     }
-
-    private void rewriteAllOrders(List<Order> orders) {
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(orderRecordsFile, false))) {
-            for (Order order : orders) {
-                writer.write(order.getOrderDetails());
-                writer.newLine();
-                writer.write(SEPARATOR);
-                writer.newLine();
-            }
-        } catch (IOException e) {
-            System.out.println("Error rewriting orders: " + e.getMessage());
-        }
-    }
-
-    private Order parseOrderBlock(String block) {
-    try {
-        String[] lines = block.split("\n");
-
-        String orderID = "";
-        String customerID = "";
-        String customerName = "";
-        LocalDate orderDate = null;
-        LocalDate deliveryDate = null;
-        Order.OrderStatus status = Order.OrderStatus.PENDING;
-        List<OrderItem> items = new ArrayList<>();
-
-        for (String line : lines) {
-            line = line.trim();
-
-            if (line.startsWith("Order ID: ")) {
-                orderID = line.substring("Order ID: ".length()).trim();
-
-            } else if (line.startsWith("Customer: ")) {
-                String customerPart = line.substring("Customer: ".length()).trim();
-                int open = customerPart.lastIndexOf('(');
-                int close = customerPart.lastIndexOf(')');
-                if (open != -1 && close != -1 && open < close) {
-                    customerName = customerPart.substring(0, open).trim();
-                    customerID = customerPart.substring(open + 1, close).trim();
-                }
-
-            } else if (line.startsWith("Date: ")) {
-                String datePart = line.substring("Date: ".length()).trim();
-                String[] pieces = datePart.split("\\|");
-                orderDate = LocalDate.parse(pieces[0].trim());
-                deliveryDate = LocalDate.parse(
-                    pieces[1].replace("Delivery:", "").trim()
-                );
-
-            } else if (line.startsWith("Status: ")) {
-                String s = line.substring("Status: ".length()).trim();
-                status = Order.OrderStatus.valueOf(s);
-
-            } else if (line.startsWith("-") || line.startsWith(" - ")) {
-                String itemLine = line.replaceFirst("^-\\s*", "").replaceFirst("^\\s*-\\s*", "").trim();
-
-                int qtyStart = itemLine.indexOf("(x");
-                int qtyEnd = itemLine.indexOf("):");
-                int priceIndex = itemLine.lastIndexOf("$");
-
-                if (qtyStart != -1 && qtyEnd != -1 && priceIndex != -1) {
-                    String itemName = itemLine.substring(0, qtyStart).trim();
-                    int quantity = Integer.parseInt(itemLine.substring(qtyStart + 2, qtyEnd).trim());
-                    double subtotal = Double.parseDouble(itemLine.substring(priceIndex + 1).trim());
-
-                    double unitPrice = subtotal / quantity;
-                    items.add(new OrderItem(itemName, quantity, unitPrice));
-                }
-            }
-        }
-
-        if (orderID.isBlank() || customerID.isBlank() || customerName.isBlank()
-                || orderDate == null || deliveryDate == null) {
-            return null;
-        }
-
-        Order order = new Order(orderID, orderDate, deliveryDate, customerID, customerName);
-        order.setStatus(status);
-
-        for (OrderItem item : items) {
-            order.addItem(item);
-        }
-
-        return order;
-
-    } catch (Exception e) {
-        System.out.println("Error parsing order block: " + e.getMessage());
-        return null;
-    }
-}
 }
