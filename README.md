@@ -8,7 +8,7 @@ copy and paste all files seen(pick one run file, copy .bat only if using Windows
 
 ## 2. Configure database
 db.properties has credentials
-if db doesnt connect after system run attempts from multiple persons, replace contents of db.properties with backup.properties
+if db doesnt connect after system run attempts from multiple persons, replace contents of db.properties with backup_properties.example
 
 ## 3. Run program
 
