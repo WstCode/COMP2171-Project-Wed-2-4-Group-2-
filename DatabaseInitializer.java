@@ -40,8 +40,8 @@ public class DatabaseInitializer {
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS payments (" +
                 "paymentID VARCHAR(50) PRIMARY KEY," +
                 "orderID VARCHAR(50) NOT NULL," +
-                "" +
-                "" +
+                "status ENUM('PAID', 'PENDING', 'OVERDUE')," +
+                "method ENUM()," +
                 "lastUpdated DATETIME" +
                 ")"
             );
