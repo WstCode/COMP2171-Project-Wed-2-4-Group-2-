@@ -14,7 +14,7 @@ public class Main {
 
             OrderRepository orderRepository = new OrderRepository(conn);
             OrderArchive orderArchive = new OrderArchive("archived_orders.txt");
-            PaymentRepository paymentRepository = new PaymentRepository("payments.txt");
+            PaymentRepository paymentRepository = new PaymentRepository(conn);
 
             OrderManager orderManager = new OrderManager(orderRepository, orderArchive, paymentRepository);
             PaymentManager paymentManager = new PaymentManager(paymentRepository);
