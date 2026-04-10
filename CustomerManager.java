@@ -28,4 +28,8 @@ public class CustomerManager {
         customerRepository.saveCustomer(customer);
         return customer;
     }
+
+    public Customer findCustomerById(String customerID) {
+        return customerRepository.findCustomerById(customerID);
+}
 }

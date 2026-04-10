@@ -3,18 +3,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OrderManager {
-    private final List<Order> activeOrders;
     private final OrderRepository repository;
     private final OrderArchive archivedOrderRepository;
-    private final PaymentRepository paymentRepository;
 
-    public OrderManager(OrderRepository repository,
-                        OrderArchive archivedOrderRepository,
-                        PaymentRepository paymentRepository) {
+    public OrderManager(OrderRepository repository, OrderArchive archivedOrderRepository, PaymentRepository paymentRepository) {
         this.repository = repository;
         this.archivedOrderRepository = archivedOrderRepository;
-        this.paymentRepository = paymentRepository;
-        this.activeOrders = new ArrayList<>(repository.getAllOrders());
     }
 
     public Order createOrder(String customerID, String customerName, List<OrderItem> details, LocalDate deliveryDate) {
@@ -38,9 +32,21 @@ public class OrderManager {
             return null;
         }
 
-        //repository.saveOrder(order);
-        activeOrders.add(order);
         return order;
+    }
+
+    public boolean saveOrder(Order order) {
+        if (order == null) {
+            return false;
+        }
+
+        try {
+            repository.saveOrder(order);
+            return true;
+        } catch (Exception e) {
+            System.out.println("Error saving order: " + e.getMessage());
+            return false;
+        }
     }
 
     public List<Order> getAllOrders() {
@@ -48,7 +54,15 @@ public class OrderManager {
     }
 
     public List<Order> getActiveOrders() {
-        return repository.getAllOrders();
+        List<Order> activeOrders = new ArrayList<>();
+
+        for (Order order : repository.getAllOrders()) {
+            if (order.getStatus() == Order.OrderStatus.PENDING) {
+                activeOrders.add(order);
+            }
+        }
+
+        return activeOrders;
     }
 
     public Order findOrderById(String orderID) {
@@ -88,7 +102,6 @@ public class OrderManager {
             return false;
         }
 
-        activeOrders.remove(order);
         return repository.deleteOrder(orderID);
     }
 
@@ -96,7 +109,7 @@ public class OrderManager {
         List<Order> upcomingOrders = new ArrayList<>();
         LocalDate today = LocalDate.now();
 
-        for (Order order : repository.getAllOrders()) {
+        for (Order order : getActiveOrders()) {
             LocalDate deliveryDate = order.getDeliveryDate();
 
             if (deliveryDate != null
@@ -116,58 +129,17 @@ public class OrderManager {
             return false;
         }
 
-        order.setStatus(Order.OrderStatus.COMPLETED);
+        order.markAsCompleted();
 
         boolean archived = archivedOrderRepository.saveArchivedOrder(order, staffID);
         if (!archived) {
             return false;
         }
 
-        boolean deletedFromActive = repository.deleteOrder(orderID);
-        if (!deletedFromActive) {
-            return false;
-        }
-
-        activeOrders.remove(order);
-        return true;
+        return repository.deleteOrder(orderID);
     }
 
     public List<Order> getArchivedOrders() {
         return archivedOrderRepository.getAllArchivedOrders();
-    }
-
-    public Payment getPayment(String orderID) {
-        Order order = repository.findOrderById(orderID);
-
-        if (order == null) {
-            return null;
-        }
-
-        return paymentRepository.findPaymentByOrderID(orderID);
-    }
-
-    public boolean updatePayment(String orderID, PaymentInfo status, PaymentInfo method) {
-        Order order = repository.findOrderById(orderID);
-
-        if (order == null || status == null || method == null) {
-            return false;
-        }
-
-        Payment payment = paymentRepository.findPaymentByOrderID(orderID);
-
-        if (payment == null) {
-            String paymentID = "PAY" + (paymentRepository.getAllPayments().size() + 1);
-            payment = new Payment(paymentID, orderID, status, method);
-            paymentRepository.savePayment(payment);
-            return true;
-        }
-
-        payment.updateStatus(status);
-        payment.updateMethod(method);
-        return paymentRepository.updatePayment(payment);
-    }
-
-    public boolean validatePayment(PaymentInfo status, PaymentInfo method) {
-        return status != null && method != null;
     }
 }
