@@ -42,7 +42,7 @@ public class DatabaseInitializer {
                 "orderID VARCHAR(50) NOT NULL," +
                 "" +
                 "" +
-                "" +
+                "lastUpdated DATETIME" +
                 ")"
             );
 
