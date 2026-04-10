@@ -17,7 +17,7 @@ public class DatabaseInitializer {
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS orders (" +
                 "orderID VARCHAR(50) PRIMARY KEY," +
                 "orderDate DATE NOT NULL," +
-                "status VARCHAR(20) NOT NULL," +
+                "status ENUM('PENDING', 'COMPLETED', 'CANCELLED')," +
                 "deliveryDate DATE," +
                 "customerID VARCHAR(50)," +
                 "pickupTime DATETIME," +
