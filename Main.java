@@ -12,9 +12,9 @@ public class Main {
             CustomerRepository customerRepository = new CustomerRepository();
             CustomerManager customerManager = new CustomerManager(customerRepository);
 
-            OrderRepository orderRepository = new OrderRepository(conn);
+            OrderRepository orderRepository = new OrderRepository(orders.txt);
             OrderArchive orderArchive = new OrderArchive("archived_orders.txt");
-            PaymentRepository paymentRepository = new PaymentRepository(conn);
+            PaymentRepository paymentRepository = new PaymentRepository(payments.txt);
 
             OrderManager orderManager = new OrderManager(orderRepository, orderArchive, paymentRepository);
             PaymentManager paymentManager = new PaymentManager(paymentRepository);
