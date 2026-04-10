@@ -27,6 +27,10 @@ public class DatabaseInitializer {
                 ")"
             );
 
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS order_items (" +
+                ")"
+            );
+
             stmt.executeUpdate("CREATE TABLE IF NOT EXISTS payments (" + 
                 ")"
             );
