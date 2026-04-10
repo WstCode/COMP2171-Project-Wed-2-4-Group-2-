@@ -4,10 +4,11 @@ Geo Boland, Lael Brown, Deyonce Buckley, Emeika Osbourne, Toni-Ann Smith
 # Setup Instructions
 
 ## 1. Clone repo
+copy and paste all files seen(pick one run file, copy .bat only if using Windows, .sh if using Mac/Linux), download jar file and move it to the same folder as the other copied
 
 ## 2. Configure database
 db.properties has credentials
-db link: mysql://avnadmin:AVNS_F3u3j1_JUr5YWAdvT4x@mysql-226bdebb-doughjadb-2171.k.aivencloud.com:15208/defaultdb?ssl-mode=REQUIRED
+if db doesnt connect after system run attempts from multiple persons, replace contents of db.properties with backup.properties
 
 ## 3. Run program
 
