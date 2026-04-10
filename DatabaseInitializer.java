@@ -14,7 +14,16 @@ public class DatabaseInitializer {
                 ")"
             );
 
-            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS orders (" + 
+            stmt.executeUpdate("CREATE TABLE IF NOT EXISTS orders (" +
+                "orderID VARCHAR(50) PRIMARY KEY," +
+                "orderDate DATE NOT NULL," +
+                "status VARCHAR(20) NOT NULL," +
+                "deliveryDate DATE," +
+                "customerID VARCHAR(50)," +
+                "pickupTime DATETIME," +
+                "completedDateTime DATETIME," +
+                "paymentID VARCHAR(50)," +
+                "customerName VARCHAR(255)" +
                 ")"
             );
 
