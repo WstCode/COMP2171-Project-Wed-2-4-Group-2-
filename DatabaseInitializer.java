@@ -41,7 +41,7 @@ public class DatabaseInitializer {
                 "paymentID VARCHAR(50) PRIMARY KEY," +
                 "orderID VARCHAR(50) NOT NULL," +
                 "status ENUM('PAID', 'PENDING', 'OVERDUE')," +
-                "method ENUM()," +
+                "method ENUM('POS_ON_DELIVERY', 'BANK_TRANSFER')," +
                 "lastUpdated DATETIME" +
                 ")"
             );
